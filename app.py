@@ -1,4 +1,6 @@
 import os
+import os
+os.environ["CUDA_VISIBLE_DEVICES"] = "-1"
 import uuid
 from flask import Flask, render_template, redirect, url_for, request, flash
 from werkzeug.utils import secure_filename as sfn
@@ -7,13 +9,14 @@ import numpy as np
 import matplotlib.pyplot as plt
 import skimage.io as io
 import skimage.transform as transform
-
+import cv2
 '''
 	Import Model & tf Here
 '''
 
-# from model import model as md
-# from model import tf
+from NASNET import nasnet_model
+import tensorflow as tf
+from load_data import preprocess_image,predictions_to_type
 
 ALLOWED_EXTS = set(['.jpg', '.jpeg', '.png'])
 UPLOAD_FOLDER = 'uploads'
@@ -27,8 +30,11 @@ app = Flask(__name__)
 	Load the weghts & make graph global
 '''
 # md.load_weights("model.h5")
-# global graph
-# graph = tf.compat.v1.get_default_graph()
+global graph
+graph = tf.compat.v1.get_default_graph()
+model=nasnet_model(15)
+model.summary()
+model.load_weights('bestweights.hdf5')
 
 # App configuration
 def configure(app):
@@ -69,20 +75,24 @@ def upload():
 @app.route('/result', methods=['GET'])
 def result():
     uploaded_img = os.path.join('static', UPLOAD_FOLDER, request.args['uploaded_img'])
+    app.logger.debug(uploaded_img)
     img = transform.resize(io.imread(uploaded_img), INPUT_SHAPE)
     
     app.logger.debug(img.shape)
-    fin_img = np.expand_dims(img, 0)    #Resize to (1, img_dim)
+    fin_img=preprocess_image(img)
+    fin_img = np.expand_dims(fin_img, 0)    #Resize to (1, img_dim)
+    
 
     '''
         Model Prediction
     '''
+    app.logger.debug(fin_img.shape)
+    # fin_img=np.reshape(fin_img,(1,331,331,3))
+    with graph.as_default():
+        prediction_array = model.predict(fin_img)[0]
+        app.logger.debug(prediction_array)
     
-    # with graph.as_default():
-    #     prediction = md.predict(fin_img)[0]
-    #     app.logger.debug(prediction)
-    
-    prediction = "Chest Kensir"
+    prediction = predictions_to_type(prediction_array)
 
     return render_template('result.html', 
                             uploaded_img=uploaded_img, 
