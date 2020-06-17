@@ -9,14 +9,13 @@ import numpy as np
 import matplotlib.pyplot as plt
 import skimage.io as io
 import skimage.transform as transform
-import cv2
 '''
 	Import Model & tf Here
 '''
 
 from NASNET import nasnet_model
 import tensorflow as tf
-from load_data import preprocess_image,predictions_to_type
+from load_data import *
 
 ALLOWED_EXTS = set(['.jpg', '.jpeg', '.png'])
 UPLOAD_FOLDER = 'uploads'
@@ -75,13 +74,15 @@ def upload():
 @app.route('/result', methods=['GET'])
 def result():
     uploaded_img = os.path.join('static', UPLOAD_FOLDER, request.args['uploaded_img'])
+    preprocessed_path = os.path.join('static', UPLOAD_FOLDER, 'preprocessed.jpg')
     app.logger.debug(uploaded_img)
     img = transform.resize(io.imread(uploaded_img), INPUT_SHAPE)
     
     app.logger.debug(img.shape)
-    fin_img=preprocess_image(img)
+    fin_img=preprocess_image_filtered(img)
     fin_img = np.expand_dims(fin_img, 0)    #Resize to (1, img_dim)
     
+
 
     '''
         Model Prediction

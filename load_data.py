@@ -32,12 +32,16 @@ def preprocess_image(img):
 
     return image
 
+def preprocess_image_filtered(img):
+    image = np.zeros((331,331,3))
+    image[:,:,0] = img
+    image[:,:,1] = img
+    image[:,:,2] = img
+    return image
+
 def predictions_to_type(predictions):
-    prediction_value=0
-    for i in range(len(predictions)):
-        if(predictions[i]==1):
-            prediction_value = i
-    
+    prediction_value = np.where(predictions == np.amax(predictions))[0][0]
+    # print(prediction_value)
     dict_diseases={
         0: "Nothing Found",
         1: "Atelectasis",
@@ -56,3 +60,6 @@ def predictions_to_type(predictions):
         14: "Hernia"
     }
     return dict_diseases[prediction_value]
+
+# arrays=[0.5,0.3,0.5,0.3,0.5,0.3,0.9,0.3,0.5,0.3,0.5,0.3,0.1]
+# predictions_to_type(np.asarray(arrays))
